@@ -1,2 +1,2 @@
-gcc .\neumannlang\neumann.c -o neumanncompile.exe
-.\neumanncompile.exe .\neumannlang\test.nm
+gcc .\neumannlang\neumann.c -o neumannrun.exe
+.\neumannrun.exe .\neumannlang\test.nm
