@@ -132,12 +132,12 @@ int main(int argc, char *argv[])
                 address = ram[address]%16;
                 break;
             case 2:
-                secmem += ram[address];
+                secmem += ram[address]%16;
                 secmem = secmem%256;
                 address++;
                 break;
             case 3:
-                secmem -= ram[address];
+                secmem -= ram[address]%16;
                 if (secmem<0){
                     secmem+=256;
                 }
