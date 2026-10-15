@@ -23,7 +23,7 @@ A: print ram[param]
 B: print second memory
 C: stall param[address] eighths of a second
 D: secmem = gates between secmem and ram[address]. see below
-E: 
+E: print ram[second memory+16]
 F: mode 0-2 (no load scr, normal, print every time)
 
 the address advances when an instruction is finished, except when the instruction affects the ram.
@@ -51,7 +51,7 @@ this fucking sucks lmao. have fun or something
 
 
 FILE *ptr;
-unsigned char ram[16] = {0};
+unsigned char ram[32] = {0};
 int secmem = 0;
 int address = 0;
 bool ldscr = true;
@@ -61,7 +61,7 @@ bool peverytime = true;
 static char wawa[6] = {'A','B','C','D','E','F'};
 
 void printarray(unsigned char arr[]){
-    for (size_t i = 0; i < 16; i++)
+    for (size_t i = 0; i < 32; i++)
     {
         if ((arr[i]/16)<10){
             printf("%d:",(arr[i]/16));
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         
-        fread(ram,16,1,ptr);
+        fread(ram,32,1,ptr);
         if ( ram[0] / 16 == 15){ // (no load scr, normal, print every time)
             if ( ram[0] % 16 ==0 ) {
                 ldscr = false;
@@ -178,6 +178,10 @@ int main(int argc, char *argv[])
                 printf("%c",ram[ram[address]%16]);
                 address++;
                 break;
+            case 14:
+                printf("%c",ram[secmem%16+16]);
+                address++;
+                break;
             case 11:
                 printf("%c",secmem);
                 address++;
@@ -212,6 +216,8 @@ int main(int argc, char *argv[])
                 printf("instruction: %d, params: %d.\n\n", ram[address]/16, ram[address]%16);
             }
         }
+
+        
         
         
     }

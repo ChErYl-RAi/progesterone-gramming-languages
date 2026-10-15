@@ -4,7 +4,7 @@ Neumannlang is a programming language inspired in the Von Neumann architecture (
 
 ## instruction list:
 ```
-0: end program (param of >0 means file is overwritten)
+0: end program 
 1: set address
 2: add to second memory
 3: substract to second memory
