@@ -27,15 +27,28 @@ instruction set:
 variable types:
 - $var                                                  string
 - #var                                                  number
-- @var                                                  bool
 
 _ in plaintext converts to \n
 
 only one instruction per line 
 
+
+
+TODO:
+- sum: [val1] [val2] etc                                sums all the valN's. usable as value
+- sub: [val1] [val2] etc                                subtracts all the valN's. usable as value
+- mul: [val1] [val2] etc                                multiplies all the valN's. usable as value
+- div: [val1] [val2] etc                                divides all the valN's. usable as value
+- mod: [val1] [val2] etc                                modulo's all the valN's. usable as value
+- nwhen: [val1] [& < >] [val2] (
+  [thing to do]
+  )                                                     if val1 and val2 are not the [equal 1<2 1>2], do the thing inside the parentheses
+
+
 */
 
 use std::fs;
+use text_io::read;
 
 
 #[derive(Debug)]
@@ -52,10 +65,6 @@ struct StrVariable{
     name:String,
     value:String,
 }
-struct BoolVariable{
-    name:String,
-    value:bool,
-}
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -69,7 +78,6 @@ fn main() {
         let mut skip = false;
         let mut intvars: Vec<IntVariable>=vec![];
         let mut strvars: Vec<StrVariable>=vec![];
-        let mut boolvars: Vec<BoolVariable>=vec![];
             
         let contents = fs::read_to_string(&args[1])
             .expect("Should have been able to read the file");
@@ -115,11 +123,24 @@ fn main() {
 
         while programcounter<lines.len() {
             if skip{
-                
+                if lines[programcounter].trim() == ")"
+                {
+                    skip=false;
+                }
+                //dbg!(lines[programcounter].trim());
+                //dbg!(programcounter);
+                programcounter+=1;
             }else{
                 match opcodes[programcounter] {
                     "show" => {
-                        print!("{}",operands[programcounter].replace("_", "\n"));
+                        let mut printee = operands[programcounter].replace("_", "\n");
+                        for i in &intvars{
+                            printee = printee.replace(&i.name, &i.value.to_string())
+                        }
+                        for i in &strvars{
+                            printee = printee.replace(&i.name, &i.value.to_string())
+                        }
+                        print!("{}",printee);
                         programcounter+=1;
                     }
                     "jump" => {
@@ -133,7 +154,7 @@ fn main() {
                         programcounter=tmp as usize;
                     }
                     "set" => {
-                        let para = contents.split(" ");
+                        let para = operands[programcounter].split(" ");
                         let bpara:Vec<&str> = para.collect();
                         if operands[programcounter].chars().nth(0).unwrap()=='#'
                         {
@@ -148,6 +169,277 @@ fn main() {
                                 intvars.push(
                                     IntVariable { name: bpara[0].trim().to_string(), value: bpara[1].trim().parse().unwrap() }
                                 )
+                            }
+                        }
+                        if operands[programcounter].chars().nth(0).unwrap()=='$'
+                        {
+                            let mut bwee = false;
+                            for var in &mut strvars{
+                                if var.name==bpara[0]{
+                                    var.value=bpara[1].to_string();
+                                    bwee=true;
+                                }
+                            }
+                            if !bwee{
+                                strvars.push(
+                                    StrVariable { name: bpara[0].trim().to_string(), value: bpara[1].trim().to_string() }
+                                )
+                            }
+                        }
+                        programcounter+=1;
+                    }
+                    "input" => {
+                        let para = operands[programcounter].split(" ");
+                        let bpara:Vec<&str> = para.collect();
+                        if operands[programcounter].chars().nth(0).unwrap()=='#'
+                        {
+                            let mut bwee = false;
+                            for var in &mut intvars{
+                                if var.name==bpara[0]{
+                                    var.value=read!();
+                                    bwee=true;
+                                }
+                            }
+                            if !bwee{
+                                intvars.push(
+                                    IntVariable { name: bpara[0].trim().to_string(), value: read!() }
+                                )
+                            }
+                        }
+                        if operands[programcounter].chars().nth(0).unwrap()=='$'
+                        {
+                            let mut bwee = false;
+                            for var in &mut strvars{
+                                if var.name==bpara[0]{
+                                    var.value=read!("{}\n");
+                                    bwee=true;
+                                }
+                            }
+                            if !bwee{
+                                strvars.push(
+                                    StrVariable { name: bpara[0].trim().to_string(), value: read!("{}\n") }
+                                )
+                            }
+                        }
+                        programcounter+=1;
+                    }
+                    "when" => {
+                        let para = operands[programcounter].split(" ");
+                        let bpara:Vec<&str> = para.collect();
+                        if bpara[1]=="&"
+                        {
+                            if bpara[0].chars().nth(0).unwrap() == '#'
+                            {
+                                let mut p1 = 0;
+                                let mut p2 = 0;
+                                for var in &mut intvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value;
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut intvars{
+                                        if var.name==bpara[0]{
+                                            p2=var.value;
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].parse().unwrap();
+                                }
+
+                                if !(p1==p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            } else if bpara[0].chars().nth(0).unwrap() == '$'
+                            {
+                                let mut p1 = "".to_string();
+                                let mut p2 = "".to_string();
+                                for var in &mut strvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value.clone();
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut strvars{
+                                        if var.name==bpara[2]{
+                                            p2=var.value.clone();
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].to_string();
+                                }
+
+                                if !(p1==p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            }
+                        }else if bpara[1]=="<"
+                        {
+                            if bpara[0].chars().nth(0).unwrap() == '#'
+                            {
+                                let mut p1 = 0;
+                                let mut p2 = 0;
+                                for var in &mut intvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value;
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut intvars{
+                                        if var.name==bpara[0]{
+                                            p2=var.value;
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].parse().unwrap();
+                                }
+
+                                if !(p1<p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            }
+                        }else if bpara[1]==">"
+                        {
+                            if bpara[0].chars().nth(0).unwrap() == '#'
+                            {
+                                let mut p1 = 0;
+                                let mut p2 = 0;
+                                for var in &mut intvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value;
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut intvars{
+                                        if var.name==bpara[0]{
+                                            p2=var.value;
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].parse().unwrap();
+                                }
+
+                                if !(p1>p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            }
+                        }
+                    }
+                    "nwhen" => {
+                        let para = operands[programcounter].split(" ");
+                        let bpara:Vec<&str> = para.collect();
+                        if bpara[1]=="&"
+                        {
+                            if bpara[0].chars().nth(0).unwrap() == '#'
+                            {
+                                let mut p1 = 0;
+                                let mut p2 = 0;
+                                for var in &mut intvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value;
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut intvars{
+                                        if var.name==bpara[0]{
+                                            p2=var.value;
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].parse().unwrap();
+                                }
+
+                                if (p1==p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            } else if bpara[0].chars().nth(0).unwrap() == '$'
+                            {
+                                let mut p1 = "".to_string();
+                                let mut p2 = "".to_string();
+                                for var in &mut strvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value.clone();
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut strvars{
+                                        if var.name==bpara[2]{
+                                            p2=var.value.clone();
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].to_string();
+                                }
+
+                                if (p1==p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            }
+                        }else if bpara[1]=="<"
+                        {
+                            if bpara[0].chars().nth(0).unwrap() == '#'
+                            {
+                                let mut p1 = 0;
+                                let mut p2 = 0;
+                                for var in &mut intvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value;
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut intvars{
+                                        if var.name==bpara[0]{
+                                            p2=var.value;
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].parse().unwrap();
+                                }
+
+                                if (p1<p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
+                            }
+                        }else if bpara[1]==">"
+                        {
+                            if bpara[0].chars().nth(0).unwrap() == '#'
+                            {
+                                let mut p1 = 0;
+                                let mut p2 = 0;
+                                for var in &mut intvars{
+                                    if var.name==bpara[0]{
+                                        p1=var.value;
+                                    }
+                                }
+                                if bpara[2].chars().nth(0).unwrap() == '#'{
+                                    for var in &mut intvars{
+                                        if var.name==bpara[0]{
+                                            p2=var.value;
+                                        }
+                                    }
+                                } else{
+                                    p2=bpara[2].parse().unwrap();
+                                }
+
+                                if (p1>p2){
+                                    skip=true;
+                                } else {
+                                    programcounter+=1;
+                                }
                             }
                         }
                     }

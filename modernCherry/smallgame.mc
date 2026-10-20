@@ -1,4 +1,4 @@
-set:#choice 0
+set:#choice 1
 loc:st
 show:select a number from 0 to 3.__
 input:#choice
